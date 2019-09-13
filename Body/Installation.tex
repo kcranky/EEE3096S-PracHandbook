@@ -1,0 +1,114 @@
+\section{Setting up your Pi}
+\label{sec:Installation}
+In order to use the Pi you need to install an operating system on it and set up networking.  The following will lead you through installing Raspbian as an operating system.  Raspbian is an operating system created for the Raspberry Pi, built on Debian.  You will then configure the networking settings in Raspbian to allow you to access the Pi remotely using SSH.
+
+While there are no requirements for this course on which operating system to use, it is strongly recommended you become familiar with a Linux-based operating system. Recommendations include Ubuntu and Mint.
+
+\subsection{Prerequisites}
+\label{sec:Prereqs}
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Hardware Requirements} & \textbf{Software Requirements} \\ \hline
+\begin{tabular}[c]{@{}l@{}}\tabitem Raspberry Pi\\ \tabitem Ethernet Cable\\ \tabitem Power source for Raspberry Pi\\ \tabitem Means of writing to the Micro SD Card\end{tabular} & \begin{tabular}[c]{@{}l@{}}\tabitem \href{https://www.raspberrypi.org/downloads/raspbian}{Rasbian (Desktop \& Recommended Software)}\\ \tabitem  \href{https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html}{PuTTY (the full suite, Windows only)}. \footnote{Some versions of Windows have the required SSH and SCP packages, but PuTTY has many other tools that are useful.}\\ \tabitem \href{https://www.sdcard.org/downloads/formatter\_4/eula\_windows/index.html}{SDFormatter}\\ \tabitem \href{https://www.balena.io/etcher/}{Etcher, an image writing tool}\\\end{tabular} \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Prepare the SD Card}
+The SD Card needs to be formatted before it can be used. To make your life simple, there is a tool called "SD Card Formatter" - a link is available in the Software Requirements box of the prerequisites section.
+
+\subsection{Install and configure Raspbian}
+This process will follow headless installation, as we are going to assume most students do not have access to spare screens, keyboards and mouses\footnote{Yes, "mouses" is entirely valid is and used to distinguish a computer device from a rodent: https://en.wikipedia.org/wiki/Computer\_mouse\#Naming}.
+
+Headless mode on the Raspberry Pi refers to using it without direct user input and output (essentially no screen, mouse or keyboard connected directly to it). This is how all of the practicals will be conducted, as it is how most IoT devices are configured (over a network).
+
+\begin{enumerate}
+    \item Insert the SD card into the computer. If you do not have a reader available, speak to a friend or tutor who does.
+    \item Format the Micro SD card\\
+        If you're on Windows, this is where you would use SDFormatter. If you're on     Ubuntu, you can use GParted.
+    \item Write image to SD card\\
+        Open Etcher. Select the downloaded zip image, and the SD card, and format. At the end of format, it may read that it failed,  but don't worry. Upon completion, Windows will try to mount partitions on the SD card that it can't read. Just press "Cancel" and then "OK" to the dialog boxes that pop up. The boot partition is the only partition we will be dealing with.
+    \item Enable SSH\\
+        SSH is covered in detail in Section \ref{sec:SSH}, but for now just enable SSH by creating a file called "ssh" (no file extension) on the boot partition of the SD card.
+    \item Configure the Networking\\
+        This section can get complicated, so we've created Section \ref{sec:NetworkingOnThePi} to help explain it. For now, just follow the steps in Section \ref{sec:Connectivity-Ethernet} and Section \ref{sec:Connectivity-ChangeComputerIP}.
+    \item Boot\\
+        Insert the SD Card into the Pi. Connect an Ethernet cable between your PC and the Pi. Connect the Pi to a power source.
+    \item Ensure connectivity\\
+        Ensure you can "see" your Pi. Open a command window or terminal, and run
+        \begin{lstlisting}[gobble=8]
+        $ ping 192.168.137.15
+        \end{lstlisting}
+        You should see a response similar to
+        \begin{lstlisting}[gobble=8]
+        $ 64 bytes from 192.168.137.15: icmp_seq=1 ttl=64 time=0.557 ms
+        \end{lstlisting}
+        or
+         \begin{lstlisting}[gobble=8]
+        $ Reply from 192.168.137.15 bytes=32 time=0.5ms TTL=52
+        \end{lstlisting}
+    \item SSH in to the Pi\\
+        Section \ref{sec:SSH} covers all the details on SSH. For now, open a command prompt or terminal on your machine, and enter in the following:
+        \begin{lstlisting}[gobble=8]
+        $ ssh pi@192.168.137.15
+        \end{lstlisting}
+        You will be asked to add the machine to known hosts. Select yes.\\
+        The password required to log in is simply "raspberry"
+    \item Configure\\
+        For practicals you will need to enable a few services on the Pi.
+        \begin{itemize}
+            \item Open a terminal. You can either click the icon or press Ctrl+Alt+T
+            \item Run
+            \begin{lstlisting}[gobble=12]
+            $ sudo raspi-config
+            \end{lstlisting}
+            \item Use the arrow keys and scroll down to "Interfacing Options"
+            \item Enable SSH, VNC, SPI, I2C and Serial
+            \item Save and exit raspi-config by using the left and right arrow keys to jump to the bottom buttons. Your Pi will reboot. Wait about 30 seconds, and SSH in again.
+        \end{itemize}
+    \item Expand the Filesystem
+        The Rasberry Pi Installation may not make use of the full SD card. In order to give yourself as much file space as you have access to, you need to expand the filesystem.
+        \begin{itemize}
+            \item SSH into the Pi
+            \item Run
+            \begin{lstlisting}[gobble=12]
+            $ sudo raspi-config
+            \end{lstlisting}
+            \item Use the arrow keys and scroll down to "Advanced Options"
+            \item Select "Expand Filesystem"
+            \item You will be shown a message saying that the root partition has been resized. Select "Ok", then "Finish" then "Yes" to reboot your Pi.
+        \end{itemize}
+    \item Creating another user\\
+        It isn't good practice to run everything as root, so we create another user with sudo privileges. The first command adds the user, the next command adds the user to the group \verb|sudo|, which gives them sudo execution rights. On the Pi, run the following:
+        \begin{lstlisting}[gobble=8]
+        $ sudo adduser <username>
+        $ sudo adduser <username> sudo
+        \end{lstlisting}
+        Now that you have created a new user, you can log into the Pi via SSH using that username as follows:
+        \begin{lstlisting}[gobble=8]
+        $ ssh <username>@192.168.137.15
+        \end{lstlisting}
+        To switch users while you are SSH'd in run
+        \begin{lstlisting}[gobble=8]
+        $ sudo su - <username>
+        \end{lstlisting}
+        To switch to root (not recommended), run
+        \begin{lstlisting}[gobble=8]
+        $ sudo su
+        \end{lstlisting}
+        To change your password, you can simply run 
+        \begin{lstlisting}[gobble=8]
+        $ passwd
+        \end{lstlisting}
+        To change the password of another user, drop down to root and run
+        \begin{lstlisting}[gobble=8]
+        $ passwd <username>
+        \end{lstlisting}
+        To delete a user, switch to another user with root access, and run
+        \begin{lstlisting}[gobble=8]
+        $ sudo deluser -remove-all-files -f <username>
+        \end{lstlisting}
+\end{enumerate}
